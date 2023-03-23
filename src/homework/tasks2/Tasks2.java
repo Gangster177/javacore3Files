@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Tasks2 {
@@ -18,6 +19,8 @@ public class Tasks2 {
         Collections.addAll(nameSP, "save1.dat", "save2.dat", "save3.dat");
         zipFiles("C:/Game/savegames", nameSP);
         cleanFile(nameSP);
+        openZip("C:/Game/savegames/zip.zip", "C:/Game/savegames/");
+        System.out.println(openProgress("C:/Game/savegames/save2.dat"));
 
     }
 
@@ -36,10 +39,10 @@ public class Tasks2 {
                 try (FileInputStream fis = new FileInputStream(path + "/" + name)) {
                     ZipEntry entry = new ZipEntry(name);
                     zout.putNextEntry(entry);
-                    byte[] buffer = new byte[fis.available()];
+                    byte[] buffer = new byte[fis.available()];//-available() метод получения размера байтов равного размеру файла
                     fis.read(buffer);
-                    zout.write(buffer);
-                    zout.closeEntry();
+                    zout.write(buffer);//- сохранение в архив
+                    zout.closeEntry();//- закрываем запись
                 } catch (IOException ex) {
                     System.out.println(ex.getMessage());
                 }
@@ -55,6 +58,36 @@ public class Tasks2 {
             delete = new File("C:/Game/savegames/" + name);
             delete.delete();
         }
+    }
+
+    public static void openZip(String pathIn, String pathOut) {
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(pathIn))) {
+            ZipEntry entry;
+            String name;
+            while ((entry = zis.getNextEntry()) != null) {
+                name = entry.getName();
+                FileOutputStream fout = new FileOutputStream(pathOut + name);
+                for (int i = zis.read(); i != -1; i = zis.read()) {
+                    fout.write(i);
+                }
+                fout.flush();
+                zis.closeEntry();
+                fout.close();
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public static GameProgress openProgress(String pathSaveGame) {
+        GameProgress gameProgress = null;
+        try (FileInputStream fis = new FileInputStream(pathSaveGame);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            gameProgress = (GameProgress) ois.readObject();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        return gameProgress;
     }
 }
 
